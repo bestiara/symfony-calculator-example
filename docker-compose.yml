@@ -1,0 +1,53 @@
+version: '3.7'
+
+services:
+    php-app:
+        build:
+            context: docker/php-app
+        depends_on:
+            - postgres
+        env_file:
+            - docker/php-app/variables.env
+        volumes:
+            - ./:/app:delegated
+        ulimits:
+            nproc: 65535
+            nofile:
+                soft: 1048576
+                hard: 1048576
+
+    php-cli:
+        build:
+            context: docker/php-cli
+        env_file:
+            - docker/php-cli/variables.env
+        volumes:
+            - ./:/app:delegated
+        ulimits:
+            nproc: 65535
+            nofile:
+                soft: 1048576
+                hard: 1048576
+
+    nginx:
+        build:
+            context: docker/nginx
+        ports:
+            - '8090:80'
+        depends_on:
+            - php-app
+        volumes:
+            - ./docker/logs:/var/log/nginx
+            - ./public:/app/public:delegated
+
+    postgres:
+        image: postgres
+        ports:
+            - '5432:5432'
+        environment:
+            - POSTGRES_PASSWORD=postgres
+        volumes:
+            - dbpostgresvolume:/var/lib/postgresql/data:delegated
+
+volumes:
+    dbpostgresvolume:
